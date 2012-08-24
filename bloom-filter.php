@@ -1,9 +1,9 @@
-<pre>
 <?php
 /*
-
-
-https://github.com/Vaizard/MurmurHash3PHP
+PHP variables are limited by signed integers (as of 5.4.4) and thus the maximum filter size using one binary string is 2GB - 1B.
+Since this script uses powers of 2, the maximum filter for this script is 1GB.
+Currently, MD5 is used as the hashing mechanism but for large data, it's best to explore MurmurHash for targeted implementation.
+Copyleft please.
 
 m bits
 k hashes
@@ -11,6 +11,8 @@ n values
 p probability of false positive 
 
 //(1-(1-1/m)^(m*ln(2)))^(m*ln(2)/n)=p
+// k = m*ln(2)/n;
+
 */
 class BloomFilter {
 	const OPTIMIZE_FOR_MEMORY = 1; // smallest m
@@ -45,7 +47,7 @@ class BloomFilter {
 		$address_bits = log($m,2);
 		$this->mask =(1 << $address_bits) - 1;
 		$this->m_chunk_size = ceil($address_bits / 8);
-		$this->bit_array = (binary)str_repeat("\0",ceil($this->m/8));
+		$this->bit_array = (binary)(str_repeat("\0",($this->m >> 3) -1));
 	}
 	public function calculateProbability($n = 0){
 		return pow(1-pow(1-1/$this->m,$this->k*($n ?: $this->n)),$this->k);
@@ -69,84 +71,38 @@ class BloomFilter {
 		$magnitude = floor(log($M,1024));
 		$unit = $units[$magnitude];
 		$M /= pow(1024,$magnitude);
-		echo 'Allocated m: '.$this->m.' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL;
-		echo 'Allocated k: '.$this->k.PHP_EOL;
-		if (isset($p)) echo 'Capacity ('.$p.'): '.number_format($this->calculateCapacity($p)).PHP_EOL;
+		return 'Allocated m: '.$this->m.' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
+			'Allocated k: '.$this->k.PHP_EOL.
+			(isset($p) ? 'Capacity ('.$p.'): '.number_format($this->calculateCapacity($p)).PHP_EOL : '');
 	}
 	public function add($key){
-		echo 'Adding '.$key.PHP_EOL;
 		$hash = md5($key,true);
 		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= md5($hash);
-		
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_index = $index * $this->m_chunk_size;
-			$hash_sub = substr($hash,$hash_index,$this->m_chunk_size);
-			/*
-			echo 'Bit Mask:'.decbin($this->mask).PHP_EOL;
-			echo 'Bit Array Memory Size: '.strlen($this->bit_array).PHP_EOL;
-			echo 'Bit Array: '.unpack('H*',$this->bit_array)[1].PHP_EOL;
-			echo 'Hash: '.unpack('H*',$hash)[1].PHP_EOL;
-			*/
-			$hash_sub = hexdec(unpack('H*',$hash_sub)[1]);
-			//echo 'Hash Sub: '.dechex($hash_sub).PHP_EOL;
-			
-			//var_dump($hash_sub,$this->mask,$hash_sub & $this->mask);
-			
-			$str_index = floor($hash_sub / 8);
-			$str_offset = $hash_sub % 8;
-			/*
-			echo 'Setting Bit '.$hash_sub.' ('.$str_index.','.$str_offset.') for Hash '.$index.PHP_EOL;
-			echo 'Setting Byte '.decbin($this->bit_array[$str_index] | (1 << $str_offset)).PHP_EOL;
-			echo 'Input '.decbin(ord($this->bit_array[$str_index])).PHP_EOL;
-			
-			var_dump($this->bit_array[$str_index] | (1 << $str_offset));
-			*/
-			//echo 'Result '.decbin($this->bit_array[$str_index] | (1 << $str_offset)).PHP_EOL;
-			$this->bit_array[$str_index] = chr(ord($this->bit_array[$str_index]) | (1 << $str_offset));
+			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->m_chunk_size,$this->m_chunk_size))[1]) & $this->mask;
+			$word = $hash_sub >> 3;
+			$this->bit_array[$word] = chr(ord($this->bit_array[$word]) | 1 << ($hash_sub % 8));
 		}
+		$this->n++;
 	}
 	public function check($key){
 		echo 'Checking '.$key.' ';
 		$hash = md5($key,true);
 		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= md5($hash);
-		
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_index = $index * $this->m_chunk_size;
-			$hash_sub = substr($hash,$hash_index,$this->m_chunk_size);
-			/*
-			echo 'Bit Mask:'.decbin($this->mask).PHP_EOL;
-			echo 'Bit Array Memory Size: '.strlen($this->bit_array).PHP_EOL;
-			echo 'Bit Array: '.bin2hex($this->bit_array).PHP_EOL;
-			echo 'Hash: '.unpack('H*',$hash)[1].PHP_EOL;
-			*/
-			$hash_sub = hexdec(unpack('H*',$hash_sub)[1]);
-			//echo 'Hash Sub: '.dechex($hash_sub).PHP_EOL;
-				
-			//var_dump($hash_sub,$this->mask,$hash_sub & $this->mask);
-				
-			$str_index = floor($hash_sub / 8);
-			$str_offset = $hash_sub % 8;
-			
-			//echo 'Getting Bit '.$hash_sub.' ('.$str_index.','.$str_offset.') for Hash '.$index.PHP_EOL;
-			if (!(ord($this->bit_array[$str_index]) & (1 << $str_offset))) return false;
+			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->m_chunk_size,$this->m_chunk_size))[1]) & $this->mask;
+			if (!(ord($this->bit_array[$hash_sub >> 3]) & (1 << ($hash_sub % 8)))) return false;
 		}
 		return true;
 	}
 }
-$bf1 = BloomFilter::createFromProbability(2000, 0.1);
+/*
+$bf1 = BloomFilter::createFromProbability(1000000000, 0.01);
 echo $bf1->getInfo(0.01);
 //echo $bf1->calculateProbability(26).PHP_EOL;
-$bf1->add('Test1');
-$bf1->add('Test2');
-$bf1->add('Test3');
-$bf1->add('Test4');
-$bf1->add('Test5');
-echo $bf1->check('Test').PHP_EOL;
-echo $bf1->check('Test1').PHP_EOL;
-echo $bf1->check('Test6').PHP_EOL;
-echo $bf1->check('Test2').PHP_EOL;
-echo $bf1->check('Test7').PHP_EOL;
-echo $bf1->check('Test3').PHP_EOL;
-
+$max = 100000;
+for ($i = 0; $i < $max; $i+=2) $bf1->add('Test'.$i);
+for ($i = $max; $i > $max - 10; $i--) echo $i.' '.$bf1->check('Test'.$i).PHP_EOL;
+echo $bf1->calculateProbability().PHP_EOL;
+*/
 ?>
-</pre>
