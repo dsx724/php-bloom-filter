@@ -74,35 +74,79 @@ class BloomFilter {
 		if (isset($p)) echo 'Capacity ('.$p.'): '.number_format($this->calculateCapacity($p)).PHP_EOL;
 	}
 	public function add($key){
+		echo 'Adding '.$key.PHP_EOL;
 		$hash = md5($key,true);
 		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= md5($hash);
 		
 		for ($index = 0; $index < $this->k; $index++){
 			$hash_index = $index * $this->m_chunk_size;
 			$hash_sub = substr($hash,$hash_index,$this->m_chunk_size);
+			/*
+			echo 'Bit Mask:'.decbin($this->mask).PHP_EOL;
+			echo 'Bit Array Memory Size: '.strlen($this->bit_array).PHP_EOL;
+			echo 'Bit Array: '.unpack('H*',$this->bit_array)[1].PHP_EOL;
+			echo 'Hash: '.unpack('H*',$hash)[1].PHP_EOL;
+			*/
+			$hash_sub = hexdec(unpack('H*',$hash_sub)[1]);
+			//echo 'Hash Sub: '.dechex($hash_sub).PHP_EOL;
 			
+			//var_dump($hash_sub,$this->mask,$hash_sub & $this->mask);
+			
+			$str_index = floor($hash_sub / 8);
+			$str_offset = $hash_sub % 8;
+			/*
+			echo 'Setting Bit '.$hash_sub.' ('.$str_index.','.$str_offset.') for Hash '.$index.PHP_EOL;
+			echo 'Setting Byte '.decbin($this->bit_array[$str_index] | (1 << $str_offset)).PHP_EOL;
+			echo 'Input '.decbin(ord($this->bit_array[$str_index])).PHP_EOL;
+			
+			var_dump($this->bit_array[$str_index] | (1 << $str_offset));
+			*/
+			//echo 'Result '.decbin($this->bit_array[$str_index] | (1 << $str_offset)).PHP_EOL;
+			$this->bit_array[$str_index] = chr(ord($this->bit_array[$str_index]) | (1 << $str_offset));
+		}
+	}
+	public function check($key){
+		echo 'Checking '.$key.' ';
+		$hash = md5($key,true);
+		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= md5($hash);
+		
+		for ($index = 0; $index < $this->k; $index++){
+			$hash_index = $index * $this->m_chunk_size;
+			$hash_sub = substr($hash,$hash_index,$this->m_chunk_size);
+			/*
 			echo 'Bit Mask:'.decbin($this->mask).PHP_EOL;
 			echo 'Bit Array Memory Size: '.strlen($this->bit_array).PHP_EOL;
 			echo 'Bit Array: '.bin2hex($this->bit_array).PHP_EOL;
 			echo 'Hash: '.unpack('H*',$hash)[1].PHP_EOL;
+			*/
+			$hash_sub = hexdec(unpack('H*',$hash_sub)[1]);
+			//echo 'Hash Sub: '.dechex($hash_sub).PHP_EOL;
+				
+			//var_dump($hash_sub,$this->mask,$hash_sub & $this->mask);
+				
+			$str_index = floor($hash_sub / 8);
+			$str_offset = $hash_sub % 8;
 			
-			$hash = hexdec(unpack('H*',substr($hash,-1,1))[1]);
-			var_dump($hash,$mask,$hash & $mask);
-			echo 'INPUT:'.unpack('H*',$hash)[1].PHP_EOL;
-			echo 'OUTPUT:'.unpack('H*',$hash & $mask)[1].PHP_EOL;
-			
-			
-			
-			echo 'Setting Bit '.''.' for Hash '.$index.PHP_EOL;
+			//echo 'Getting Bit '.$hash_sub.' ('.$str_index.','.$str_offset.') for Hash '.$index.PHP_EOL;
+			if (!(ord($this->bit_array[$str_index]) & (1 << $str_offset))) return false;
 		}
-	}
-	public function check($key){
-		$hash = md5($key,true);
+		return true;
 	}
 }
-$bf1 = BloomFilter::createFromProbability(20, 0.01);
+$bf1 = BloomFilter::createFromProbability(2000, 0.1);
 echo $bf1->getInfo(0.01);
 //echo $bf1->calculateProbability(26).PHP_EOL;
-$bf1->add('Test');
+$bf1->add('Test1');
+$bf1->add('Test2');
+$bf1->add('Test3');
+$bf1->add('Test4');
+$bf1->add('Test5');
+echo $bf1->check('Test').PHP_EOL;
+echo $bf1->check('Test1').PHP_EOL;
+echo $bf1->check('Test6').PHP_EOL;
+echo $bf1->check('Test2').PHP_EOL;
+echo $bf1->check('Test7').PHP_EOL;
+echo $bf1->check('Test3').PHP_EOL;
+
 ?>
 </pre>
