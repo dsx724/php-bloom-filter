@@ -24,3 +24,4 @@ PHP 5.4.4 variables are limited to byte addressing from the signed 32 bit intege
 Since this implementation require powers of 2 for filter vector size, the largest vector size is 1GB.
 Workaround with multiple variables could overcome this limitation.
 It uses array dereferencing features of PHP 5.4.  Only minor edits should be required to support PHP 5.3.
+MurmurHash is a hot topic in this realm.  It isn't implemented here though due to module dependency for fast implementation.
