@@ -2,10 +2,6 @@ This is proper bloom filter implementation in PHP.  I could not find an space/ti
 
 It uses a binary string to store the bit vector and manipulates based on byte indexes of a string.
 
-PHP 5.4.4 variables are limited to byte addressing from the signed 32 bit integer and thus the maximum variable is only 2GB - 1B.
-Since this implementation require powers of 2 for filter vector size, the largest vector size is 1GB.
-Workaround with multiple variables could overcome this limitation.
-
 On a 3.8GHz Sandy Bridge system, the single threaded lookup/insert throughput is 150K elements / second.
 
 
@@ -20,3 +16,11 @@ p probability of false positive
 k = m*ln(2)/n;
 
 Use at your own risk.  Attribution Required.
+
+
+NOTE:
+
+PHP 5.4.4 variables are limited to byte addressing from the signed 32 bit integer and thus the maximum variable is only 2GB - 1B.
+Since this implementation require powers of 2 for filter vector size, the largest vector size is 1GB.
+Workaround with multiple variables could overcome this limitation.
+It uses array dereferencing features of PHP 5.4.  Only minor edits should be required to support PHP 5.3.
