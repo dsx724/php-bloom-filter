@@ -1,19 +1,5 @@
 <?php
-/*
-PHP variables are limited by signed integers (as of 5.4.4) and thus the maximum filter size using one binary string is 2GB - 1B.
-Since this script uses powers of 2, the maximum filter for this script is 1GB.
-Currently, MD5 is used as the hashing mechanism but for large data, it's best to explore MurmurHash for targeted implementation.
-Copyleft please.
-
-m bits
-k hashes
-n values
-p probability of false positive 
-
-//(1-(1-1/m)^(m*ln(2)))^(m*ln(2)/n)=p
-// k = m*ln(2)/n;
-
-*/
+/* https://github.com/dsx724/php-bloom-filter */
 class BloomFilter {
 	const OPTIMIZE_FOR_MEMORY = 1; // smallest m
 	const OPTIMIZE_FOR_HASHES = 2; // smallest k
@@ -39,15 +25,17 @@ class BloomFilter {
 	private $mask;
 	private $m_chunk_size;
 	private $bit_array;
+	private $hash = 'md5';
 	public function __construct($m,$k){
 		if ($m < 8) throw new Exception('For practical applications, we restrict the bit array length to at least 8 bits.');
 		if ($m & ($m - 1) == 0) throw new Exception('The bit array must be power of 2.');
+		if ($m > 17179869183) throw new Exception('The maximum filter size is 1GB');
 		$this->m = $m; //number of bits
 		$this->k = $k;
 		$address_bits = log($m,2);
 		$this->mask =(1 << $address_bits) - 1;
 		$this->m_chunk_size = ceil($address_bits / 8);
-		$this->bit_array = (binary)(str_repeat("\0",($this->m >> 3) -1));
+		$this->bit_array = (binary)(str_repeat("\0",($this->m >> 3)));
 	}
 	public function calculateProbability($n = 0){
 		return pow(1-pow(1-1/$this->m,$this->k*($n ?: $this->n)),$this->k);
@@ -76,8 +64,8 @@ class BloomFilter {
 			(isset($p) ? 'Capacity ('.$p.'): '.number_format($this->calculateCapacity($p)).PHP_EOL : '');
 	}
 	public function add($key){
-		$hash = md5($key,true);
-		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= md5($hash);
+		$hash = hash($this->hash,$key,true);
+		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
 		for ($index = 0; $index < $this->k; $index++){
 			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->m_chunk_size,$this->m_chunk_size))[1]) & $this->mask;
 			$word = $hash_sub >> 3;
@@ -86,9 +74,8 @@ class BloomFilter {
 		$this->n++;
 	}
 	public function check($key){
-		echo 'Checking '.$key.' ';
-		$hash = md5($key,true);
-		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= md5($hash);
+		$hash = hash($this->hash,$key,true);
+		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
 		for ($index = 0; $index < $this->k; $index++){
 			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->m_chunk_size,$this->m_chunk_size))[1]) & $this->mask;
 			if (!(ord($this->bit_array[$hash_sub >> 3]) & (1 << ($hash_sub % 8)))) return false;
@@ -96,13 +83,22 @@ class BloomFilter {
 		return true;
 	}
 }
+
 /*
-$bf1 = BloomFilter::createFromProbability(1000000000, 0.01);
+
+
+$bf1 = BloomFilter::createFromProbability(100000000, 0.01);
 echo $bf1->getInfo(0.01);
 //echo $bf1->calculateProbability(26).PHP_EOL;
-$max = 100000;
+$max = 1000000;
 for ($i = 0; $i < $max; $i+=2) $bf1->add('Test'.$i);
-for ($i = $max; $i > $max - 10; $i--) echo $i.' '.$bf1->check('Test'.$i).PHP_EOL;
-echo $bf1->calculateProbability().PHP_EOL;
+
+$start1 = microtime(true);
+
+for ($i = $max; $i > 0; $i--) $bf1->check('Test'.$i);
+
+$end1 = microtime(true);
+$elapsed1 = $end1 - $start1;
+printf('%10.10f',$elapsed1);
 */
 ?>
