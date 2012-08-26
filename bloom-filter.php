@@ -55,7 +55,7 @@ class BloomFilter {
 	}
 	public function getInfo($p = null){
 		$units = array('','K','M','G','T','P','E','Z','Y');
-		$M = $this->m / 8;
+		$M = $this->m >> 3;
 		$magnitude = floor(log($M,1024));
 		$unit = $units[$magnitude];
 		$M /= pow(1024,$magnitude);
@@ -85,8 +85,6 @@ class BloomFilter {
 }
 
 /*
-
-
 $bf1 = BloomFilter::createFromProbability(100000000, 0.01);
 echo $bf1->getInfo(0.01);
 //echo $bf1->calculateProbability(26).PHP_EOL;
