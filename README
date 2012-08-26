@@ -1,4 +1,4 @@
-This is proper bloom filter implementation in PHP.  I could not find an space/time efficient open-source PHP one.
+This is a proper bloom filter implementation in PHP.  I could not find an space/time efficient open-source PHP one.
 
 It uses a binary string to store the bit vector and manipulates based on byte indexes of a string.
 
