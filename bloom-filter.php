@@ -8,12 +8,15 @@ class BloomFilter {
 		if ($method){
 			
 		} else {
+			$k = floor(log(1/$p,2));
 			$m = pow(2,ceil(log(-$n*log($p)/pow(log(2),2),2))); //approximate estimator method
-			$k = round(log(1/$p,2));
 		}
 		return new BloomFilter($m,$k);
 	}
 	public static function union($bf1,$bf2){
+		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
+		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
+		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
 		
 	}
 	public static function intersect($bf1,$bf2){
@@ -83,20 +86,4 @@ class BloomFilter {
 		return true;
 	}
 }
-
-/*
-$bf1 = BloomFilter::createFromProbability(100000000, 0.01);
-echo $bf1->getInfo(0.01);
-//echo $bf1->calculateProbability(26).PHP_EOL;
-$max = 1000000;
-for ($i = 0; $i < $max; $i+=2) $bf1->add('Test'.$i);
-
-$start1 = microtime(true);
-
-for ($i = $max; $i > 0; $i--) $bf1->check('Test'.$i);
-
-$end1 = microtime(true);
-$elapsed1 = $end1 - $start1;
-printf('%10.10f',$elapsed1);
-*/
 ?>
