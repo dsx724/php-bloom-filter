@@ -13,29 +13,39 @@ class BloomFilter {
 		}
 		return new BloomFilter($m,$k);
 	}
-	public static function union($bf1,$bf2){
+	public static function getUnion($bf1,$bf2){
 		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
 		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
-		
+		$bf = new BloomFilter($bf1->m,$bf1->k,$bf1->hash);
+		$bf->n = $bf1->n + $bf2->n;
+		for ($i = 0; $i < strlen($bf->bit_array); $i++) $bf->bit_array[$i] = chr(ord($bf1->bit_array[$i]) | ord($bf2->bit_array[$i]));
+		return $bf;
 	}
-	public static function intersect($bf1,$bf2){
-		
+	public static function getIntersection($bf1,$bf2){
+		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
+		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
+		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
+		$bf = new BloomFilter($bf1->m,$bf1->k,$bf1->hash);
+		$bf->n = $bf1->n + $bf2->n;
+		for ($i = 0; $i < strlen($bf->bit_array); $i++) $bf->bit_array[$i] = chr(ord($bf1->bit_array[$i]) & ord($bf2->bit_array[$i]));
+		return $bf;
 	}
 	private $n = 0; // # of entries
 	private $m; // # of bits in array
 	private $k; // # of hash functions
+	private $hash;
 	private $mask;
 	private $m_chunk_size;
 	private $bit_array;
-	private $hash = 'md5';
-	public function __construct($m,$k){
+	public function __construct($m, $k, $h='md5'){
 		if ($m < 8) throw new Exception('For practical applications, we restrict the bit array length to at least 8 bits.');
 		if ($m & ($m - 1) == 0) throw new Exception('The bit array must be power of 2.');
 		if ($m > 17179869183) throw new Exception('The maximum filter size is 1GB');
 		$this->m = $m; //number of bits
 		$this->k = $k;
-		$address_bits = log($m,2);
+		$this->hash = $h;
+		$address_bits = (int)log($m,2);
 		$this->mask =(1 << $address_bits) - 1;
 		$this->m_chunk_size = ceil($address_bits / 8);
 		$this->bit_array = (binary)(str_repeat("\0",($this->m >> 3)));
@@ -84,6 +94,20 @@ class BloomFilter {
 			if (!(ord($this->bit_array[$hash_sub >> 3]) & (1 << ($hash_sub % 8)))) return false;
 		}
 		return true;
+	}
+	public function union($bf){
+		if ($this->m != $bf->m) throw new Exception('Unable to merge due to vector difference.');
+		if ($this->k != $bf->k) throw new Exception('Unable to merge due to hash count difference.');
+		if ($this->hash != $bf->hash) throw new Exception('Unable to merge due to hash difference.');
+		$this->n += $bf->n;
+		for ($i = 0; $i < strlen($this->bit_array); $i++) $this->bit_array[$i] = chr(ord($this->bit_array[$i]) | ord($bf->bit_array[$i]));
+	}
+	public function intersect($bf){
+		if ($this->m != $bf->m) throw new Exception('Unable to merge due to vector difference.');
+		if ($this->k != $bf->k) throw new Exception('Unable to merge due to hash count difference.');
+		if ($this->hash != $bf->hash) throw new Exception('Unable to merge due to hash difference.');
+		$this->n -= $bf->n;
+		for ($i = 0; $i < strlen($this->bit_array); $i++) $this->bit_array[$i] = chr(ord($this->bit_array[$i]) & ord($bf->bit_array[$i]));
 	}
 }
 ?>
