@@ -1,9 +1,9 @@
 <form action="" method="POST">
+<input type="submit" name="bench" value=""/>
 <input type="submit" name="bench" value="2"/>
 <input type="submit" name="bench" value="10"/>
 <input type="submit" name="bench" value="U"/>
 <input type="submit" name="bench" value="I"/>
-<input type="submit" name="bench" value=""/>
 </form>
 <pre>
 <?php
@@ -21,7 +21,7 @@ require_once 'bloom-filter.php';
 if (isset($_POST['bench'])){
 	switch ($_POST['bench']){
 		case '2':
-			for ($i = 3; $i < 14; $i++){
+			for ($i = 4; $i < 14; $i++){
 				for ($j = 0.1; $j > 0.000001; $j /= 10){
 					$n = (int)pow(2,$i);
 					$bf = BloomFilter::createFromProbability($n, $j);
@@ -59,19 +59,93 @@ if (isset($_POST['bench'])){
 			}
 		break;
 		case 'U':
-			$max = 1000000;
+			$capacity = 10000;
 			$sample = 10000;
-			$bf1 = BloomFilter::createFromProbability($max, 0.01);
+			$probability = 0.01;
+			$bf1 = BloomFilter::createFromProbability($capacity, $probability);
 			for ($i = 0; $i < $sample; $i++) $bf1->add('K'.$i);
-			$bf2 = BloomFilter::createFromProbability($max, 0.01);
-			for ($i = 0; $i < $sample; $i++) $bf1->add('K'.($i*2));
+			$bf2 = BloomFilter::createFromProbability($capacity, $probability);
+			for ($i = 10000; $i < $sample * 2; $i+=2) $bf2->add('K'.$i);
 			$bfx = BloomFilter::getUnion($bf1,$bf2);
-			echo $bfx->check(0);
-			$bf3 = BloomFilter::createFromProbability($max, 0.1);
-			for ($i = 0; $i < $sample; $i++) $bf1->add($i);
+			$false_neg = 0;
+			$false_pos = 0;
+			for ($i = 0; $i < $sample * 2 + 1; $i++){
+				if ($i < $sample || ($i < $sample * 2 && $i % 2 == 0)) $false_neg += !$bfx->check('K'.$i);
+				else $false_pos += $bfx->check('K'.$i);
+			}
+			echo $bfx->getInfo(0.01);
+			echo 'False Negatives '.$false_neg.PHP_EOL;
+			echo 'False Positives '.$false_pos.' ('.($false_pos / ($sample * 2 + 1)).','.$probability.')'.PHP_EOL;
+			echo ($false_neg > 0 || $false_pos / ($sample * 2 + 1) > $probability) ? 'FAIL' : 'PASS';
+			echo PHP_EOL;	
+			
+			try {
+				echo 'Testing Merge ';
+				$bf3 = BloomFilter::createFromProbability($capacity, 0.1);
+				for ($i = 0; $i < $sample; $i++) $bf3->add($i);
+				$bfx = BloomFilter::getUnion($bf1,$bf3);
+				echo 'FAIL'.PHP_EOL;
+			} catch (Exception $e){
+				echo 'PASS'.PHP_EOL;
+			}
+			
+			$bf1->union($bf2);
+			$false_neg = 0;
+			$false_pos = 0;
+			for ($i = 0; $i < $sample * 2 + 1; $i++){
+				if ($i < $sample || ($i < $sample * 2 && $i % 2 == 0)) $false_neg += !$bf1->check('K'.$i);
+				else $false_pos += $bf1->check('K'.$i);
+			}
+			echo $bf1->getInfo(0.01);
+			echo 'False Negatives '.$false_neg.PHP_EOL;
+			echo 'False Positives '.$false_pos.' ('.($false_pos / ($sample * 2 + 1)).','.$probability.')'.PHP_EOL;
+			echo ($false_neg > 0 || $false_pos / ($sample * 2 + 1) > $probability) ? 'FAIL' : 'PASS';
+			echo PHP_EOL;
+				
 		break;
 		case 'I':
-			
+			$capacity = 10000;
+			$sample = 10000;
+			$probability = 0.01;
+			$bf1 = BloomFilter::createFromProbability($capacity, $probability);
+			for ($i = 0; $i < $sample; $i++) $bf1->add('K'.$i);
+			$bf2 = BloomFilter::createFromProbability($capacity, $probability);
+			for ($i = 9000; $i < $sample * 2; $i+=2) $bf2->add('K'.$i);
+			$bfx = BloomFilter::getIntersection($bf1,$bf2);
+			$false_neg = 0;
+			$false_pos = 0;
+			for ($i = 0; $i < $sample * 2; $i++){
+				if ($i >= 9000 && $i < 10000 && $i % 2 == 0) $false_neg += !$bfx->check('K'.$i);
+				else $false_pos += $bfx->check('K'.$i);
+			}
+			echo $bfx->getInfo(0.01);
+			echo 'False Negatives '.$false_neg.PHP_EOL;
+			echo 'False Positives '.$false_pos.' ('.($false_pos / ($sample * 2 + 1)).','.$probability.')'.PHP_EOL;
+			echo ($false_neg > 0 || $false_pos / ($sample * 2 + 1) > $probability) ? 'FAIL' : 'PASS';
+			echo PHP_EOL;
+				
+			try {
+				echo 'Testing Merge ';
+				$bf3 = BloomFilter::createFromProbability($capacity, 0.1);
+				for ($i = 0; $i < $sample; $i++) $bf3->add($i);
+				$bfx = BloomFilter::getIntersection($bf1,$bf3);
+				echo 'FAIL'.PHP_EOL;
+			} catch (Exception $e){
+				echo 'PASS'.PHP_EOL;
+			}
+				
+			$bf1->intersect($bf2);
+			$false_neg = 0;
+			$false_pos = 0;
+			for ($i = 0; $i < $sample * 2; $i++){
+				if ($i >= 9000 && $i < 10000 && $i % 2 == 0) $false_neg += !$bf1->check('K'.$i);
+				else $false_pos += $bf1->check('K'.$i);
+			}
+			echo $bf1->getInfo(0.01);
+			echo 'False Negatives '.$false_neg.PHP_EOL;
+			echo 'False Positives '.$false_pos.' ('.($false_pos / ($sample * 2 + 1)).','.$probability.')'.PHP_EOL;
+			echo ($false_neg > 0 || $false_pos / ($sample * 2 + 1) > $probability) ? 'FAIL' : 'PASS';
+			echo PHP_EOL;
 		break;
 		default:
 			

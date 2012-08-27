@@ -6,7 +6,7 @@ class BloomFilter {
 	public static function createFromProbability($n, $p, $method = 0){
 		if ($p <= 0 || $p >= 1) throw new Exception('Invalid false positive rate requested.');
 		if ($method){
-			
+			//TODO target optimizations
 		} else {
 			$k = floor(log(1/$p,2));
 			$m = pow(2,ceil(log(-$n*log($p)/pow(log(2),2),2))); //approximate estimator method
@@ -74,6 +74,7 @@ class BloomFilter {
 		$M /= pow(1024,$magnitude);
 		return 'Allocated m: '.$this->m.' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
 			'Allocated k: '.$this->k.PHP_EOL.
+			'Load n: '.$this->n.PHP_EOL.
 			(isset($p) ? 'Capacity ('.$p.'): '.number_format($this->calculateCapacity($p)).PHP_EOL : '');
 	}
 	public function add($key){
