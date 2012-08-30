@@ -8,7 +8,7 @@
 <pre>
 <?php
 ini_set('display_errors','on');
-ini_set('memory_limit','32G');
+ini_set('memory_limit','2G');
 ini_set('max_execution_time',600);
 error_reporting(E_ALL);
 ini_set('display_errors',1);
@@ -16,7 +16,7 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline) {
 	die($errno.': '.$errstr.' in '.$errfile.' on '.$errline);
 });
 
-require_once 'bloom-filter.php';
+require_once 'bloomfilter.php';
 
 if (isset($_POST['bench'])){
 	switch ($_POST['bench']){
@@ -31,8 +31,8 @@ if (isset($_POST['bench'])){
 					$false_neg = 0;
 					$false_pos = 0;
 					for ($k = 0; $k < $n*3; $k++) {
-						if ($k % 3 == 0) $false_neg += !$bf->check('T'.$k);
-						else $false_pos += $bf->check('T'.$k);
+						if ($k % 3 == 0) $false_neg += !$bf->contains('T'.$k);
+						else $false_pos += $bf->contains('T'.$k);
 					}
 					echo ' '.$false_neg.' '.$false_pos.' '.number_format($false_pos / $n / 3,2).' '.($false_pos / $n / 3 < $j && $false_neg == 0) ? 'PASS' : 'FAIL';
 					echo PHP_EOL;
@@ -50,8 +50,8 @@ if (isset($_POST['bench'])){
 					$false_neg = 0;
 					$false_pos = 0;
 					for ($k = 0; $k < $n*3; $k++) {
-						if ($k % 3 == 0) $false_neg += !$bf->check('T'.$k);
-						else $false_pos += $bf->check('T'.$k);
+						if ($k % 3 == 0) $false_neg += !$bf->contains('T'.$k);
+						else $false_pos += $bf->contains('T'.$k);
 					}
 					echo ' '.$false_neg.' '.$false_pos.' '.number_format($false_pos / $n / 3,2).' '.($false_pos / $n / 3 < $j && $false_neg == 0) ? 'PASS' : 'FAIL';
 					echo PHP_EOL;
@@ -70,8 +70,8 @@ if (isset($_POST['bench'])){
 			$false_neg = 0;
 			$false_pos = 0;
 			for ($i = 0; $i < $sample * 2 + 1; $i++){
-				if ($i < $sample || ($i < $sample * 2 && $i % 2 == 0)) $false_neg += !$bfx->check('K'.$i);
-				else $false_pos += $bfx->check('K'.$i);
+				if ($i < $sample || ($i < $sample * 2 && $i % 2 == 0)) $false_neg += !$bfx->contains('K'.$i);
+				else $false_pos += $bfx->contains('K'.$i);
 			}
 			echo $bfx->getInfo(0.01);
 			echo 'False Negatives '.$false_neg.PHP_EOL;
@@ -93,8 +93,8 @@ if (isset($_POST['bench'])){
 			$false_neg = 0;
 			$false_pos = 0;
 			for ($i = 0; $i < $sample * 2 + 1; $i++){
-				if ($i < $sample || ($i < $sample * 2 && $i % 2 == 0)) $false_neg += !$bf1->check('K'.$i);
-				else $false_pos += $bf1->check('K'.$i);
+				if ($i < $sample || ($i < $sample * 2 && $i % 2 == 0)) $false_neg += !$bf1->contains('K'.$i);
+				else $false_pos += $bf1->contains('K'.$i);
 			}
 			echo $bf1->getInfo(0.01);
 			echo 'False Negatives '.$false_neg.PHP_EOL;
@@ -115,8 +115,8 @@ if (isset($_POST['bench'])){
 			$false_neg = 0;
 			$false_pos = 0;
 			for ($i = 0; $i < $sample * 2; $i++){
-				if ($i >= 9000 && $i < 10000 && $i % 2 == 0) $false_neg += !$bfx->check('K'.$i);
-				else $false_pos += $bfx->check('K'.$i);
+				if ($i >= 9000 && $i < 10000 && $i % 2 == 0) $false_neg += !$bfx->contains('K'.$i);
+				else $false_pos += $bfx->contains('K'.$i);
 			}
 			echo $bfx->getInfo(0.01);
 			echo 'False Negatives '.$false_neg.PHP_EOL;
@@ -138,8 +138,8 @@ if (isset($_POST['bench'])){
 			$false_neg = 0;
 			$false_pos = 0;
 			for ($i = 0; $i < $sample * 2; $i++){
-				if ($i >= 9000 && $i < 10000 && $i % 2 == 0) $false_neg += !$bf1->check('K'.$i);
-				else $false_pos += $bf1->check('K'.$i);
+				if ($i >= 9000 && $i < 10000 && $i % 2 == 0) $false_neg += !$bf1->contains('K'.$i);
+				else $false_pos += $bf1->contains('K'.$i);
 			}
 			echo $bf1->getInfo(0.01);
 			echo 'False Negatives '.$false_neg.PHP_EOL;

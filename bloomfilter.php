@@ -1,6 +1,7 @@
 <?php
 /* https://github.com/dsx724/php-bloom-filter */
-class BloomFilter {
+require_once __DIR__.'/iamq.php';
+class BloomFilter implements iAMQ {
 	const OPTIMIZE_FOR_MEMORY = 1; // smallest m
 	const OPTIMIZE_FOR_HASHES = 2; // smallest k
 	public static function createFromProbability($n, $p, $method = 0){
@@ -87,7 +88,7 @@ class BloomFilter {
 		}
 		$this->n++;
 	}
-	public function check($key){
+	public function contains($key){
 		$hash = hash($this->hash,$key,true);
 		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
 		for ($index = 0; $index < $this->k; $index++){
@@ -96,14 +97,14 @@ class BloomFilter {
 		}
 		return true;
 	}
-	public function union($bf){
+	public function unionWith($bf){
 		if ($this->m != $bf->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($this->k != $bf->k) throw new Exception('Unable to merge due to hash count difference.');
 		if ($this->hash != $bf->hash) throw new Exception('Unable to merge due to hash difference.');
 		$this->n += $bf->n;
 		for ($i = 0; $i < strlen($this->bit_array); $i++) $this->bit_array[$i] = chr(ord($this->bit_array[$i]) | ord($bf->bit_array[$i]));
 	}
-	public function intersect($bf){
+	public function intersectWith($bf){
 		if ($this->m != $bf->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($this->k != $bf->k) throw new Exception('Unable to merge due to hash count difference.');
 		if ($this->hash != $bf->hash) throw new Exception('Unable to merge due to hash difference.');
