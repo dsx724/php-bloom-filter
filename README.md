@@ -19,8 +19,9 @@ On a 3.8GHz Sandy Bridge system, the single threaded lookup/insert throughput is
 
 ###Notes and Limitations
 * The bit vector only supports powers of 2 bits in size.
-* PHP 5.x variables are limited to byte addressing from the signed 32 bit integer and thus the maximum variable is only 2GB - 1B.
-	* The largest vector size is 1GB.
+* PHP 5.x variables are limited to byte addressing of signed 32 bit integers.  
+	* The the maximum variable is only 2GB - 1B.
+	* Thus the largest vector size is 1GB.
 	* Workaround with multiple variables could the single vector size-limitation.
 	* Minor edits are required to support PHP 5.3 due to the use of array dereferencing features of PHP 5.4.
 
