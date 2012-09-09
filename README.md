@@ -1,12 +1,12 @@
-#Summary
+###Summary
 This is a proper bloom filter implementation in PHP.  I could not find an space/time efficient open-source PHP one.
 It uses a binary string to store the bit vector and manipulates based on byte indexes of the string.
 
-#Performance
+###Performance
 On a 3.8GHz Sandy Bridge system, the single threaded lookup/insert throughput is 150K elements / second with k = 7.
 
 
-#Math Bits
+###Math Bits
 m vector bits
 k hash functions
 n elements
@@ -17,7 +17,7 @@ k = m*ln(2)/n;
 
 
 
-#WARNING, LIMITATIONS, AND PITFALLS
+###Notes and Limitations
 
 * PHP 5.4 variables are limited to byte addressing from the signed 32 bit integer and thus the maximum variable is only 2GB - 1B.
 	* Since this implementation require powers of 2 for filter vector size, the largest vector size is 1GB.
