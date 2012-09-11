@@ -65,7 +65,7 @@ class BloomFilter implements iAMQ {
 		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
 		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
 		$bf = new BloomFilter($bf1->m,$bf1->k,$bf1->hash);
-		$bf->n = $bf1->n + $bf2->n;
+		$bf->n = abs($bf1->n - $bf2->n);
 		for ($i = 0; $i < strlen($bf->bit_array); $i++) $bf->bit_array[$i] = chr(ord($bf1->bit_array[$i]) & ord($bf2->bit_array[$i]));
 		return $bf;
 	}
@@ -145,7 +145,7 @@ class BloomFilter implements iAMQ {
 		if ($this->m != $bf->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($this->k != $bf->k) throw new Exception('Unable to merge due to hash count difference.');
 		if ($this->hash != $bf->hash) throw new Exception('Unable to merge due to hash difference.');
-		$this->n -= $bf->n;
+		$this->n = abs($this->n - $bf->n);
 		for ($i = 0; $i < strlen($this->bit_array); $i++) $this->bit_array[$i] = chr(ord($this->bit_array[$i]) & ord($bf->bit_array[$i]));
 	}
 }
