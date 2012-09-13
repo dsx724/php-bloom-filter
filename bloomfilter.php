@@ -74,19 +74,19 @@ class BloomFilter implements iAMQ {
 	private $k; // # of hash functions
 	private $hash;
 	private $mask;
-	private $m_chunk_size;
-	private $bit_array;
+	private $chunk_size; // # of bytes to push off hash to generate an address
+	private $bit_array; // data structure
 	public function __construct($m, $k, $h='md5'){
-		if ($m < 8) throw new Exception('For practical applications, we restrict the bit array length to at least 8 bits.');
-		if ($m & ($m - 1) == 0) throw new Exception('The bit array must be power of 2.');
-		if ($m > 17179869183) throw new Exception('The maximum filter size is 1GB');
+		if ($m < 8) throw new Exception('The bit array length must be at least 8 bits.');
+		if ($m & ($m - 1) == 0) throw new Exception('The bit array length must be power of 2.');
+		if ($m > 17179869183) throw new Exception('The maximum data structure size is 1GB.');
 		$this->m = $m; //number of bits
 		$this->k = $k;
 		$this->hash = $h;
 		$address_bits = (int)log($m,2);
 		$this->mask =(1 << $address_bits) - 1;
-		$this->m_chunk_size = ceil($address_bits / 8);
-		$this->bit_array = (binary)(str_repeat("\0",($this->m >> 3)));
+		$this->chunk_size = ceil($address_bits / 8);
+		$this->bit_array = (binary)(str_repeat("\0",$this->getArraySize(true)));
 	}
 	public function calculateProbability($n = 0){
 		return pow(1-pow(1-1/$this->m,$this->k*($n ?: $this->n)),$this->k);
@@ -98,8 +98,8 @@ class BloomFilter implements iAMQ {
 	public function getElementCount(){
 		return $this->n;
 	}
-	public function getArraySize(){
-		return $this->m;
+	public function getArraySize($bytes = false){
+		return $this->m >> ($bytes ? 3 : 0);
 	}
 	public function getHashCount(){
 		return $this->k;
@@ -117,9 +117,9 @@ class BloomFilter implements iAMQ {
 	}
 	public function add($key){
 		$hash = hash($this->hash,$key,true);
-		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
+		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->m_chunk_size,$this->m_chunk_size))[1]) & $this->mask;
+			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
 			$word = $hash_sub >> 3;
 			$this->bit_array[$word] = chr(ord($this->bit_array[$word]) | 1 << ($hash_sub % 8));
 		}
@@ -127,9 +127,9 @@ class BloomFilter implements iAMQ {
 	}
 	public function contains($key){
 		$hash = hash($this->hash,$key,true);
-		while ($this->m_chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
+		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->m_chunk_size,$this->m_chunk_size))[1]) & $this->mask;
+			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
 			if (!(ord($this->bit_array[$hash_sub >> 3]) & (1 << ($hash_sub % 8)))) return false;
 		}
 		return true;
