@@ -106,13 +106,13 @@ class BloomFilter implements iAMQ {
 	}
 	public function getInfo($p = null){
 		$units = array('','K','M','G','T','P','E','Z','Y');
-		$M = $this->m >> 3;
+		$M = $this->getArraySize(true);
 		$magnitude = floor(log($M,1024));
 		$unit = $units[$magnitude];
 		$M /= pow(1024,$magnitude);
-		return 'Allocated m: '.$this->m.' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
-			'Allocated k: '.$this->k.PHP_EOL.
-			'Load n: '.$this->n.PHP_EOL.
+		return 'Allocated m: '.$this->getArraySize().' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
+			'Allocated k: '.$this->getHashCount().PHP_EOL.
+			'Load n: '.$this->getElementCount().PHP_EOL.
 			(isset($p) ? 'Capacity ('.$p.'): '.number_format($this->calculateCapacity($p)).PHP_EOL : '');
 	}
 	public function add($key){
