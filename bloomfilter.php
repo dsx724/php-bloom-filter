@@ -104,10 +104,10 @@ class BloomFilter implements iAMQ {
 		$magnitude = floor(log($M,1024));
 		$unit = $units[$magnitude];
 		$M /= pow(1024,$magnitude);
-		return 'Allocated m: '.$this->getArraySize().' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
-			'Allocated k: '.$this->getHashCount().PHP_EOL.
-			'Load n: '.$this->getElementCount().PHP_EOL.
-			(isset($p) ? 'Capacity ('.$p.'): '.number_format($this->calculateCapacity($p)).PHP_EOL : '');
+		return 'Allocated '.$this->getArraySize().' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
+			'Allocated '.$this->getHashCount(). ' hashes'.PHP_EOL.
+			'Contains '.$this->getElementCount().' elements'.PHP_EOL.
+			(isset($p) ? 'Capacity of '.number_format($this->calculateCapacity($p)).'('.$p.')'.PHP_EOL : '');
 	}
 	public function add($key){
 		$hash = hash($this->hash,$key,true);
