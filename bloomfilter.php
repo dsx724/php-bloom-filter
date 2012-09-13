@@ -79,7 +79,7 @@ class BloomFilter implements iAMQ {
 		$this->hash = $h;
 		$address_bits = (int)log($m,2);
 		$this->mask =(1 << $address_bits) - 1;
-		$this->chunk_size = ceil($address_bits / 8);
+		$this->chunk_size = (int)ceil($address_bits / 8);
 		$this->bit_array = (binary)(str_repeat("\0",$this->getArraySize(true)));
 	}
 	public function calculateProbability($n = 0){

@@ -13,6 +13,7 @@ foreach ($config['test']['include'] as $include) require_once $include;
 <input type="submit" name="bench" value="10"/>
 <input type="submit" name="bench" value="U"/>
 <input type="submit" name="bench" value="I"/>
+<input type="submit" name="bench" value="MEM"/>
 </form>
 <?php
 
@@ -214,6 +215,13 @@ if (isset($_POST['bench'])){
 			$result[] = ($false_pos / $samples < $p && $false_neg == 0) ? '<i>PASS</i>' : '<b>FAIL</b>';
 			
 			$results[] = $result;
+		break;
+		
+		case 'MEM':
+			$capacity = 800000000;
+			$probability = 0.01;
+			$filter = $config['test']['class']::createFromProbability($capacity, $probability);
+			echo $filter->getInfo($probability);
 		break;
 	}
 	echo '<table>';
