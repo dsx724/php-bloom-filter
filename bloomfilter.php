@@ -37,18 +37,12 @@ interface iAMQ {
 	public function contains($key);
 }
 
-
 class BloomFilter implements iAMQ {
-	const OPTIMIZE_FOR_MEMORY = 1; // smallest m
-	const OPTIMIZE_FOR_HASHES = 2; // smallest k
-	public static function createFromProbability($n, $p, $method = 0){
+	public static function createFromProbability($n, $p){
 		if ($p <= 0 || $p >= 1) throw new Exception('Invalid false positive rate requested.');
-		if ($method){
-			//TODO target optimizations
-		} else {
-			$k = floor(log(1/$p,2));
-			$m = pow(2,ceil(log(-$n*log($p)/pow(log(2),2),2))); //approximate estimator method
-		}
+		if ($n <= 0) throw new Exception('Invalid capacity requested.');
+		$k = floor(log(1/$p,2));
+		$m = pow(2,ceil(log(-$n*log($p)/pow(log(2),2),2))); //approximate estimator method
 		return new BloomFilter($m,$k);
 	}
 	public static function getUnion($bf1,$bf2){
