@@ -115,7 +115,7 @@ class BloomFilter implements iAMQ {
 	}
 	public function add($key){
 		$hash = hash($this->hash,$key,true);
-		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
+		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$hash,true);
 		for ($index = 0; $index < $this->k; $index++){
 			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
 			$word = $hash_sub >> 3;
@@ -125,7 +125,7 @@ class BloomFilter implements iAMQ {
 	}
 	public function contains($key){
 		$hash = hash($this->hash,$key,true);
-		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$key,true);
+		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$hash,true);
 		for ($index = 0; $index < $this->k; $index++){
 			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
 			if (!(ord($this->bit_array[$hash_sub >> 3]) & (1 << ($hash_sub % 8)))) return false;
