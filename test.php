@@ -14,6 +14,7 @@ foreach ($config['test']['include'] as $include) require_once $include;
 <input type="submit" name="bench" value="U"/>
 <input type="submit" name="bench" value="I"/>
 <input type="submit" name="bench" value="MEM"/>
+<input type="submit" name="bench" value="TEST"/>
 </form>
 <?php
 
@@ -222,6 +223,33 @@ if (isset($_POST['bench'])){
 			$probability = 0.01;
 			$filter = $config['test']['class']::createFromProbability($capacity, $probability);
 			echo '<pre>'.$filter->getInfo($probability).'</pre>';
+		break;
+		
+		case 'TEST':
+			$capacity = 1000000;
+			$probability = 0.01;
+			$s1 = microtime(true);
+			$filter = $config['test']['class']::createFromProbability($capacity, $probability);
+			$e1 = microtime(true);
+			
+			$sample = 1000000;
+			$offset = 500000;
+			
+			$s2 = microtime(true);
+			for ($i = 0; $i < $sample; $i++) $filter->add($i);
+			$e2 = microtime(true);
+			$t = 0;
+			$s3 = microtime(true);
+			for ($i = $offset; $i < $sample + $offset; $i++) $t += $filter->contains($i);
+			$e3 = microtime(true);
+			
+			echo '<pre>';
+			echo $filter->getInfo($probability).PHP_EOL;
+			echo 'Create Time: '.($e1 - $s1).PHP_EOL;
+			echo 'Add Time: '.($e2 - $s2).' ('.floor($sample/($e2-$s2)).' i/s)'.PHP_EOL;
+			echo 'Check Time: '.($e3 - $s3).' ('.floor($sample/($e3-$s3)).' i/s)'.PHP_EOL;
+			echo $t;
+			echo '</pre>';
 		break;
 	}
 	echo '<table>';
