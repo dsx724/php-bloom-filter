@@ -38,6 +38,15 @@ interface iAMQ {
 }
 
 class BloomFilter implements iAMQ {
+	private static function checkMerge($bf1,$bf2){
+		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
+		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
+		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
+	}
+	private static function merge($bf1,$bf2,$bfout,$union = false){
+		if ($union) for ($i = 0; $i < strlen($bfout->bit_array); $i++) $bfout->bit_array[$i] = chr(ord($bf1->bit_array[$i]) | ord($bf2->bit_array[$i]));
+		else for ($i = 0; $i < strlen($bfout->bit_array); $i++) $bfout->bit_array[$i] = chr(ord($bf1->bit_array[$i]) & ord($bf2->bit_array[$i]));
+	}
 	public static function createFromProbability($n, $p){
 		if ($p <= 0 || $p >= 1) throw new Exception('Invalid false positive rate requested.');
 		if ($n <= 0) throw new Exception('Invalid capacity requested.');
@@ -46,21 +55,17 @@ class BloomFilter implements iAMQ {
 		return new BloomFilter($m,$k);
 	}
 	public static function getUnion($bf1,$bf2){
-		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
-		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
-		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
+		self::checkMerge($bf1,$bf2);
 		$bf = new BloomFilter($bf1->m,$bf1->k,$bf1->hash);
 		$bf->n = $bf1->n + $bf2->n;
-		for ($i = 0; $i < strlen($bf->bit_array); $i++) $bf->bit_array[$i] = chr(ord($bf1->bit_array[$i]) | ord($bf2->bit_array[$i]));
+		self::merge($bf1,$bf2,$bf,true);
 		return $bf;
 	}
 	public static function getIntersection($bf1,$bf2){
-		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
-		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
-		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
+		self::checkMerge($bf1,$bf2);
 		$bf = new BloomFilter($bf1->m,$bf1->k,$bf1->hash);
 		$bf->n = abs($bf1->n - $bf2->n);
-		for ($i = 0; $i < strlen($bf->bit_array); $i++) $bf->bit_array[$i] = chr(ord($bf1->bit_array[$i]) & ord($bf2->bit_array[$i]));
+		self::merge($bf1,$bf2,$bf,false);
 		return $bf;
 	}
 	private $n = 0; // # of entries
@@ -129,18 +134,14 @@ class BloomFilter implements iAMQ {
 		return true;
 	}
 	public function unionWith($bf){
-		if ($this->m != $bf->m) throw new Exception('Unable to merge due to vector difference.');
-		if ($this->k != $bf->k) throw new Exception('Unable to merge due to hash count difference.');
-		if ($this->hash != $bf->hash) throw new Exception('Unable to merge due to hash difference.');
+		self::checkMerge($this,$bf);
 		$this->n += $bf->n;
-		for ($i = 0; $i < strlen($this->bit_array); $i++) $this->bit_array[$i] = chr(ord($this->bit_array[$i]) | ord($bf->bit_array[$i]));
+		self::merge($this,$bf,$this,true);
 	}
 	public function intersectWith($bf){
-		if ($this->m != $bf->m) throw new Exception('Unable to merge due to vector difference.');
-		if ($this->k != $bf->k) throw new Exception('Unable to merge due to hash count difference.');
-		if ($this->hash != $bf->hash) throw new Exception('Unable to merge due to hash difference.');
+		self::checkMerge($this,$bf);
 		$this->n = abs($this->n - $bf->n);
-		for ($i = 0; $i < strlen($this->bit_array); $i++) $this->bit_array[$i] = chr(ord($this->bit_array[$i]) & ord($bf->bit_array[$i]));
+		self::merge($this,$bf,$this,false);
 	}
 }
 ?>

@@ -221,7 +221,7 @@ if (isset($_POST['bench'])){
 			$capacity = 800000000;
 			$probability = 0.01;
 			$filter = $config['test']['class']::createFromProbability($capacity, $probability);
-			echo $filter->getInfo($probability);
+			echo '<pre>'.$filter->getInfo($probability).'</pre>';
 		break;
 	}
 	echo '<table>';
