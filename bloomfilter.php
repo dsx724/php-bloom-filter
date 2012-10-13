@@ -117,7 +117,8 @@ class BloomFilter implements iAMQ {
 		$hash = hash($this->hash,$key,true);
 		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$hash,true);
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
+			$unpack = unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size));
+			$hash_sub = hexdec($unpack[1]) & $this->mask;
 			$word = $hash_sub >> 3;
 			$this->bit_array[$word] = chr(ord($this->bit_array[$word]) | 1 << ($hash_sub % 8));
 		}
@@ -127,7 +128,8 @@ class BloomFilter implements iAMQ {
 		$hash = hash($this->hash,$key,true);
 		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$hash,true);
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
+			$unpack = unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size));
+			$hash_sub = hexdec($unpack[1]) & $this->mask;
 			if (!(ord($this->bit_array[$hash_sub >> 3]) & (1 << ($hash_sub % 8)))) return false;
 		}
 		return true;
