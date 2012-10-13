@@ -105,7 +105,7 @@ class BloomFilter implements iAMQ {
 	public function getInfo($p = null){
 		$units = array('','K','M','G','T','P','E','Z','Y');
 		$M = $this->getArraySize(true);
-		$magnitude = floor(log($M,1024));
+		$magnitude = intval(floor(log($M,1024)));
 		$unit = $units[$magnitude];
 		$M /= pow(1024,$magnitude);
 		return 'Allocated '.$this->getArraySize().' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
