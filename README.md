@@ -1,3 +1,6 @@
+###Blog
+http://www.xuetech.com/search/label/Bloom%20Filter
+
 ###Summary
 This is a proper bloom filter implementation in PHP.  I could not find an space/time efficient open-source PHP one.
 It uses a binary string to store the bit vector and manipulates based on byte indexes of the string.
