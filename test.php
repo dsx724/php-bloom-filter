@@ -19,19 +19,19 @@ foreach ($config['test']['include'] as $include) require_once $include;
 <?php
 
 if (isset($_POST['bench'])){
-	$results = array();
+	$results = [];
 	switch ($_POST['bench']){
 		case '2':
-			$results[] = array('N Elements','EProb','Capacity','FNeg','FPos','AProb');
+			$results[] = ['N Elements','EProb','M Bytes','Capacity','FNeg','FPos','AProb'];
 			for ($i = 4; $i < 16; $i++){
 				$n = (int)pow(2,$i);
 				for ($p = 0.1; $p > 0.000001; $p /= 10){
-					$result = array();
+					$result = [];
 					$result[] = $n;
 					$result[] = $p;
 					
 					$filter = $config['test']['class']::createFromProbability($n, $p);
-					
+					$result[] = $filter->getArraySize(true);
 					$result[] = $filter->calculateCapacity($p);
 					
 					$false_neg = 0;
@@ -56,16 +56,17 @@ if (isset($_POST['bench'])){
 		break;
 		
 		case '10':
-			$results[] = array('N Elements','EProb','Capacity','FNeg','FPos','AProb');
+			$results[] = ['N Elements','EProb','M Bytes','Capacity','FNeg','FPos','AProb'];
 			for ($i = 1; $i < 6; $i++){
 				$n = (int)pow(10,$i);
 				for ($p = 0.1; $p > 0.000001; $p /= 10){
-					$result = array();
+					$result = [];
 					$result[] = $n;
 					$result[] = $p;
 						
 					$filter = $config['test']['class']::createFromProbability($n, $p);
-						
+					
+					$result[] = $filter->getArraySize(true);
 					$result[] = $filter->calculateCapacity($p);
 						
 					$false_neg = 0;
@@ -89,8 +90,8 @@ if (isset($_POST['bench'])){
 		break;
 		
 		case 'U':
-			$results[] = array('FNeg','FPos','EProb','AProb');
-			$result = array();
+			$results[] = ['FNeg','FPos','EProb','AProb'];
+			$result = [];
 			$capacity = 100000;
 			$max = 175000;
 			$p = 0.01;
@@ -133,7 +134,7 @@ if (isset($_POST['bench'])){
 				echo '<i>PASS</i>'.PHP_EOL;
 			}
 			
-			$result = array();
+			$result = [];
 			
 			$filter1->unionWith($filter2);
 			
@@ -154,8 +155,8 @@ if (isset($_POST['bench'])){
 		break;
 		
 		case 'I':
-			$results[] = array('FNeg','FPos','EProb','AProb');
-			$result = array();
+			$results[] = ['FNeg','FPos','EProb','AProb'];
+			$result = [];
 			$capacity = 100000;
 			$max = 300000;
 			$p = 0.01;
@@ -198,7 +199,7 @@ if (isset($_POST['bench'])){
 				echo '<i>PASS</i>'.PHP_EOL;
 			}
 			
-			$result = array();
+			$result = [];
 			
 			$filter1->intersectWith($filter2);
 			
