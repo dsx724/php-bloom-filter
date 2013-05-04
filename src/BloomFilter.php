@@ -1,5 +1,5 @@
 <?php
-/* 
+/*
 Copyright (c) 2012, Da Xue
 All rights reserved.
 
@@ -13,8 +13,8 @@ modification, are permitted provided that the following conditions are met:
 3. All advertising materials mentioning features or use of this software
    must display the following acknowledgement:
    This product includes software developed by Da Xue.
-4. The name of the author nor the names of its contributors may be used 
-   to endorse or promote products derived from this software without 
+4. The name of the author nor the names of its contributors may be used
+   to endorse or promote products derived from this software without
    specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY DA XUE ''AS IS'' AND ANY
@@ -31,13 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* https://github.com/dsx724/php-bloom-filter */
 
-
-interface iAMQ {
-	public function add($key);
-	public function contains($key);
-}
-
-class BloomFilter implements iAMQ {
+class BloomFilter {
 	private static function merge($bf1,$bf2,$bfout,$union = false){
 		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
