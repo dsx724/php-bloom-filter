@@ -133,7 +133,8 @@ class BloomFilter
         $hash = $this->generateHashForKey($key);
 
         for ($index = 0; $index < $this->hashCount; $index++) {
-            $subHash = hexdec(unpack('H*', substr($hash, $index * $this->chunkSize, $this->chunkSize))[1]) & $this->bitMask;
+            $unpackedValue = unpack('H*', substr($hash, $index * $this->chunkSize, $this->chunkSize));
+            $subHash = hexdec($unpackedValue[1]) & $this->bitMask;
 
             $word = $subHash >> 3;
             $this->bitArray[$word] = chr(ord($this->bitArray[$word]) | 1 << ($subHash % 8));
@@ -152,7 +153,8 @@ class BloomFilter
         $hash = $this->generateHashForKey($key);
 
         for ($index = 0; $index < $this->hashCount; $index++) {
-            $subHash = hexdec(unpack('H*', substr($hash, $index * $this->chunkSize, $this->chunkSize))[1]) & $this->bitMask;
+            $unpackedValue = unpack('H*', substr($hash, $index * $this->chunkSize, $this->chunkSize));
+            $subHash = hexdec($unpackedValue[1]) & $this->bitMask;
 
             if ( ! (ord($this->bitArray[$subHash >> 3]) & (1 << ($subHash % 8)))) {
                 return false;
