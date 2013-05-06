@@ -1,4 +1,7 @@
 <?php
+
+namespace DX;
+
 /*
 Copyright (c) 2012, Da Xue
 All rights reserved.
