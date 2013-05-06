@@ -1,0 +1,25 @@
+{
+    "name": "dsx724/php-bloom-filter",
+    "type": "library",
+    "description": "Clean and efficient bloom filter using native data types in pure PHP",
+    "keywords": ["bloom", "filter"],
+    "homepage": "https://github.com/dsx724/php-bloom-filter",
+    "license": "BSD-4-Clause",
+    "authors": [
+        {
+            "name": "Da Xue",
+            "email": "da@lessconfused.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "3.7.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "DX": "src/"
+        }
+    }
+}
