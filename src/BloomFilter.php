@@ -31,106 +31,149 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* https://github.com/dsx724/php-bloom-filter */
 
-class BloomFilter {
-	private static function merge($bf1,$bf2,$bfout,$union = false){
-		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
-		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
-		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
-		if ($union){
-			for ($i = 0; $i < strlen($bfout->bit_array); $i++) $bfout->bit_array[$i] = chr(ord($bf1->bit_array[$i]) | ord($bf2->bit_array[$i]));
-			$bfout->n = $bf1->n + $bf2->n;
-		} else {
-			for ($i = 0; $i < strlen($bfout->bit_array); $i++) $bfout->bit_array[$i] = chr(ord($bf1->bit_array[$i]) & ord($bf2->bit_array[$i]));
-			$bfout->n = abs($bf1->n - $bf2->n);
-		}
-	}
-	public static function createFromProbability($n, $p){
-		if ($p <= 0 || $p >= 1) throw new Exception('Invalid false positive rate requested.');
-		if ($n <= 0) throw new Exception('Invalid capacity requested.');
-		$k = floor(log(1/$p,2));
-		$m = pow(2,ceil(log(-$n*log($p)/pow(log(2),2),2))); //approximate estimator method
-		return new self($m,$k);
-	}
-	public static function getUnion($bf1,$bf2){
-		$bf = new self($bf1->m,$bf1->k,$bf1->hash);
-		self::merge($bf1,$bf2,$bf,true);
-		return $bf;
-	}
-	public static function getIntersection($bf1,$bf2){
-		$bf = new self($bf1->m,$bf1->k,$bf1->hash);
-		self::merge($bf1,$bf2,$bf,false);
-		return $bf;
-	}
-	private $n = 0; // # of entries
-	private $m; // # of bits in array
-	private $k; // # of hash functions
-	private $hash;
-	private $mask;
-	private $chunk_size; // # of bytes to push off hash to generate an address
-	private $bit_array; // data structure
-	public function __construct($m, $k, $h='md5'){
-		if ($m < 8) throw new Exception('The bit array length must be at least 8 bits.');
-		if ($m & ($m - 1) == 0) throw new Exception('The bit array length must be power of 2.');
-		if ($m > 17179869183) throw new Exception('The maximum data structure size is 1GB.');
-		$this->m = $m; //number of bits
-		$this->k = $k;
-		$this->hash = $h;
-		$address_bits = (int)log($m,2);
-		$this->mask =(1 << $address_bits) - 1;
-		$this->chunk_size = (int)ceil($address_bits / 8);
-		$this->bit_array = (binary)(str_repeat("\0",$this->getArraySize(true)));
-	}
-	public function calculateProbability($n = 0){
-		return pow(1-pow(1-1/$this->m,$this->k*($n ?: $this->n)),$this->k);
-		// return pow(1-exp($this->k*($n ?: $this->n)/$this->m),$this->k); //approximate estimator
-	}
-	public function calculateCapacity($p){
-		return floor($this->m*log(2)/log($p,1-pow(1-1/$this->m,$this->m*log(2))));
-	}
-	public function getElementCount(){
-		return $this->n;
-	}
-	public function getArraySize($bytes = false){
-		return $this->m >> ($bytes ? 3 : 0);
-	}
-	public function getHashCount(){
-		return $this->k;
-	}
-	public function getInfo($p = null){
-		$units = array('','K','M','G','T','P','E','Z','Y');
-		$M = $this->getArraySize(true);
-		$magnitude = intval(floor(log($M,1024)));
-		$unit = $units[$magnitude];
-		$M /= pow(1024,$magnitude);
-		return 'Allocated '.$this->getArraySize().' bits ('.$M.' '.$unit.'Bytes)'.PHP_EOL.
-			'Allocated '.$this->getHashCount(). ' hashes'.PHP_EOL.
-			'Contains '.$this->getElementCount().' elements'.PHP_EOL.
-			(isset($p) ? 'Capacity of '.number_format($this->calculateCapacity($p)).' (p='.$p.')'.PHP_EOL : '');
-	}
-	public function add($key){
-		$hash = hash($this->hash,$key,true);
-		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$hash,true);
-		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
-			$word = $hash_sub >> 3;
-			$this->bit_array[$word] = chr(ord($this->bit_array[$word]) | 1 << ($hash_sub % 8));
-		}
-		$this->n++;
-	}
-	public function contains($key){
-		$hash = hash($this->hash,$key,true);
-		while ($this->chunk_size * $this->k > strlen($hash)) $hash .= hash($this->hash,$hash,true);
-		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]) & $this->mask;
-			if (!(ord($this->bit_array[$hash_sub >> 3]) & (1 << ($hash_sub % 8)))) return false;
-		}
-		return true;
-	}
-	public function unionWith($bf){
-		self::merge($this,$bf,$this,true);
-	}
-	public function intersectWith($bf){
-		self::merge($this,$bf,$this,false);
-	}
+/**
+ * Bloom Filter
+ */
+class BloomFilter
+{
+    /**
+     * Number of bits in array.
+     *
+     * @var integer
+     */
+    private $bitCount;
+
+    /**
+     * Number of hashes.
+     *
+     * @var integer
+     */
+    private $hashCount;
+
+    /**
+     * Function name to be use when hashing.
+     *
+     * @var string
+     */
+    private $hashFunction;
+
+    /**
+     * Bit mask.
+     *
+     * @var integer
+     */
+    private $bitMask;
+
+    /**
+     * Number of bytes to push off hash to generate an address.
+     *
+     * @var integer
+     */
+    private $chunkSize;
+
+    /**
+     * Binary structure that contains the filter.
+     *
+     * @var binary
+     */
+    private $bitArray;
+
+    /**
+     * Initialize bloom filter.
+     *
+     * @param integer $capacity     Filter capacity in number of entries
+     * @param float   $maxErrorRate Probability of false positives
+     */
+    public function __construct($capacity, $maxErrorRate)
+    {
+        if ($maxErrorRate <= 0 || $maxErrorRate >= 1) {
+            throw new Exception('Invalid false positive rate requested.');
+        }
+
+        $this->hashCount = floor(log(1 / $maxErrorRate, 2));
+
+        if ($capacity <= 0) {
+            throw new Exception('Invalid capacity requested.');
+        }
+
+        //approximate estimator method
+        $this->bitCount = pow(2, ceil(log(-$capacity * log($maxErrorRate) / pow(log(2), 2), 2)));
+
+        if ($this->bitCount > (pow(2, 30) * 8)) {
+            throw new Exception('The maximum bit array size is 1GB.');
+        }
+
+        $this->hashFunction = 'md5';
+        $addressBits        = (int)log($this->bitCount, 2);
+        $this->bitMask         = (1 << $addressBits) - 1;
+        $this->chunkSize    = (int)ceil($addressBits / 8);
+        $this->bitArray     = (binary)(str_repeat("\0", $this->getFilterSizeInBytes()));
+    }
+
+    /**
+     * Retrieve bloom filter size in bytes.
+     *
+     * @return integer
+     */
+    public function getFilterSizeInBytes()
+    {
+        return $this->bitCount >> 3; // divide by 8 the fast way (bits to bytes)
+    }
+
+    /**
+     * Add $key to bloom filter.
+     *
+     * @param string $key
+     */
+    public function add($key)
+    {
+        $hash = $this->generateHashForKey($key);
+
+        for ($index = 0; $index < $this->hashCount; $index++) {
+            $subHash = hexdec(unpack('H*', substr($hash, $index * $this->chunkSize, $this->chunkSize))[1]) & $this->bitMask;
+
+            $word = $subHash >> 3;
+            $this->bitArray[$word] = chr(ord($this->bitArray[$word]) | 1 << ($subHash % 8));
+        }
+    }
+
+    /**
+     * Check if $key exists in bloom filter.
+     *
+     * @param string $key
+     *
+     * @return boolean
+     */
+    public function contains($key)
+    {
+        $hash = $this->generateHashForKey($key);
+
+        for ($index = 0; $index < $this->hashCount; $index++) {
+            $subHash = hexdec(unpack('H*', substr($hash, $index * $this->chunkSize, $this->chunkSize))[1]) & $this->bitMask;
+
+            if ( ! (ord($this->bitArray[$subHash >> 3]) & (1 << ($subHash % 8)))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Generate hash with the proper size to be used in bloom filter.
+     *
+     * @param string $key
+     *
+     * @return binary
+     */
+    public function generateHashForKey($key)
+    {
+        $hash = hash($this->hashFunction, $key, true);
+
+        while ($this->chunkSize * $this->hashCount > strlen($hash)) {
+            $hash .= hash($this->hashFunction, $hash, true);
+        }
+
+        return $hash;
+    }
 }
-?>
