@@ -5,6 +5,7 @@ php-bloom-filter
 ================
 This is a bloom filter implementation in PHP.  I could not find an space/time efficient PHP one.
 It uses a binary string to store the bit vector and manipulates based on byte indexes of the string.
+[Apache 2.0 License](https://raw.github.com/dsx724/console-qrcode/master/LICENSE).
 
 performance
 ===========
