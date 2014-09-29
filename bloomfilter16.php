@@ -34,11 +34,12 @@ class BloomFilter16 {
 	private static function merge($bf1,$bf2,$bfout,$union = false){
 		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
+		$length = strlen($bfout->bit_array);
 		if ($union){
-			for ($i = 0; $i < strlen($bfout->bit_array); $i++) $bfout->bit_array[$i] = chr(ord($bf1->bit_array[$i]) | ord($bf2->bit_array[$i]));
+			$bfout->bit_array = $bf1->bit_array | $bf2->bit_array;
 			$bfout->n = $bf1->n + $bf2->n;
 		} else {
-			for ($i = 0; $i < strlen($bfout->bit_array); $i++) $bfout->bit_array[$i] = chr(ord($bf1->bit_array[$i]) & ord($bf2->bit_array[$i]));
+			$bfout->bit_array = $bf1->bit_array & $bf2->bit_array;
 			$bfout->n = abs($bf1->n - $bf2->n);
 		}
 	}
