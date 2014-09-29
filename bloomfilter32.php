@@ -28,16 +28,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* https://github.com/dsx724/php-bloom-filter */
 
-interface iAMQ {
-	public function add($key);
-	public function contains($key);
-}
+#This is the optimized version using MD5 only.
 
-class BloomFilter implements iAMQ{
+class BloomFilter32 {
 	private static function merge($bf1,$bf2,$bfout,$union = false){
 		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
-		if ($bf1->hash != $bf2->hash) throw new Exception('Unable to merge due to hash difference.');
 		if ($union){
 			for ($i = 0; $i < strlen($bfout->bit_array); $i++) $bfout->bit_array[$i] = chr(ord($bf1->bit_array[$i]) | ord($bf2->bit_array[$i]));
 			$bfout->n = $bf1->n + $bf2->n;
@@ -66,21 +62,20 @@ class BloomFilter implements iAMQ{
 	private $n = 0; // # of entries
 	private $m; // # of bits in array
 	private $k; // # of hash functions
-	private $hash;
 	private $mask;
 	private $chunk_size; // # of bytes to push off hash to generate an address
+	private $hash_size;
 	private $bit_array; // data structure
-	public function __construct($m, $k, $h='md5'){
+	public function __construct($m, $k){
 		if ($m < 8) throw new Exception('The bit array length must be at least 8 bits.');
 		if ($m & ($m - 1) == 0) throw new Exception('The bit array length must be power of 2.');
-		if ($m > 8589934592) throw new Exception('The maximum data structure size is 1GB.');
-		$this->m = $m; //number of bits
+		if ($m > 4294967296) throw new Exception('The maximum data structure size is 512MB.');
+		$this->m = $m;
 		$this->k = $k;
-		$this->hash = $h;
 		$address_bits = (int)log($m,2);
 		$this->mask = (1 << $address_bits) - 8;
-		$this->chunk_size = (int)ceil($address_bits / 8);
-		$this->hash_times = ((int)ceil($this->chunk_size * $this->k / strlen(hash($this->hash,null,true)))) - 1;
+		$this->chunk_size = ((int)ceil($address_bits / 32)) << 2;
+		$this->hash_times = ((int)ceil($this->chunk_size * $this->k / 16)) - 1;
 		$this->bit_array = (binary)(str_repeat("\0",$this->getArraySize(true)));
 	}
 	public function calculateProbability($n = 0){
@@ -111,20 +106,20 @@ class BloomFilter implements iAMQ{
 			(isset($p) ? 'Capacity of '.number_format($this->calculateCapacity($p)).' (p='.$p.')'.PHP_EOL : '');
 	}
 	public function add($key){
-		$hash = hash($this->hash,$key,true);
-		for ($i = 0; $i < $this->hash_times; $i++) $hash .= hash($this->hash,$hash,true);
+		$hash = md5($key,true);
+		for ($i = 0; $i < $this->hash_times; $i++) $hash .= md5($hash,true);
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]);
+			$hash_sub = unpack('L',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1];
 			$word = ($hash_sub & $this->mask) >> 3;
 			$this->bit_array[$word] = chr(ord($this->bit_array[$word]) | 1 << ($hash_sub & 7));
 		}
 		$this->n++;
 	}
 	public function contains($key){
-		$hash = hash($this->hash,$key,true);
-		for ($i = 0; $i < $this->hash_times; $i++) $hash .= hash($this->hash,$hash,true);
+		$hash = md5($key,true);
+		for ($i = 0; $i < $this->hash_times; $i++) $hash .= md5($hash,true);
 		for ($index = 0; $index < $this->k; $index++){
-			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]);
+			$hash_sub = unpack('L',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1];
 			if ((ord($this->bit_array[($hash_sub & $this->mask) >> 3]) & (1 << ($hash_sub & 7))) === 0) return false;
 		}
 		return true;
