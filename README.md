@@ -39,9 +39,9 @@ On HHVM:
 
 It is faster than the following implementations by a significant margin:
 
-*https://github.com/mrspartak/php.bloom.filter
-*https://code.google.com/p/php-bloom-filter/	
-*https://packagist.org/packages/pleonasm/bloom-filter
+* https://github.com/mrspartak/php.bloom.filter
+* https://code.google.com/p/php-bloom-filter/	
+* https://packagist.org/packages/pleonasm/bloom-filter
 
 MD5 hashing is one of the more expensive operations and PHP does not have a native implementation of xxHash or Murmurhash3.
 
