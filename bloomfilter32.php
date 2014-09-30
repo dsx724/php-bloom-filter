@@ -69,7 +69,7 @@ class BloomFilter32 {
 	private $bit_array; // data structure
 	public function __construct($m, $k){
 		if ($m < 8) throw new Exception('The bit array length must be at least 8 bits.');
-		if ($m & ($m - 1) == 0) throw new Exception('The bit array length must be power of 2.');
+		if (($m & ($m - 1)) !== 0) throw new Exception('The bit array length must be power of 2.');
 		if ($m > 4294967296) throw new Exception('The maximum data structure size is 512MB.');
 		$this->m = $m;
 		$this->k = $k;
@@ -112,7 +112,7 @@ class BloomFilter32 {
 		for ($index = 0; $index < $this->k; $index++){
 			$hash_sub = unpack('L',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1];
 			$word = ($hash_sub & $this->mask) >> 3;
-			$this->bit_array[$word] = chr(ord($this->bit_array[$word]) | 1 << ($hash_sub & 7));
+			$this->bit_array[$word] = $this->bit_array[$word] | chr(1 << ($hash_sub & 7));
 		}
 		$this->n++;
 	}

@@ -9,9 +9,9 @@ php-bloom-filter
 * [Apache 2.0 License](https://raw.github.com/dsx724/console-qrcode/master/LICENSE).
 
 There are 3 implementations with slightly different performance characteristics:
-* a 1GB vector implementation with (8-40 bit addressing) with any hash: 200K / 300K
-* a 512MB vector implementation (32 bit addressing) with MD5: 240K / 400K
-* a 64KB vector implementation (16 bit addressing) with MD5: 330K / 600K
+* a 1GB vector implementation with (8-40 bit addressing) with any hash: 209K / 329K
+* a 512MB vector implementation (32 bit addressing) with MD5: 255K / 407K
+* a 64KB vector implementation (16 bit addressing) with MD5: 347K / 602K
 
 math
 ====

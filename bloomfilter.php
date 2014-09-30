@@ -33,7 +33,7 @@ interface iAMQ {
 	public function contains($key);
 }
 
-class BloomFilter implements iAMQ{
+class BloomFilter implements iAMQ {
 	private static function merge($bf1,$bf2,$bfout,$union = false){
 		if ($bf1->m != $bf2->m) throw new Exception('Unable to merge due to vector difference.');
 		if ($bf1->k != $bf2->k) throw new Exception('Unable to merge due to hash count difference.');
@@ -73,7 +73,7 @@ class BloomFilter implements iAMQ{
 	private $bit_array; // data structure
 	public function __construct($m, $k, $h='md5'){
 		if ($m < 8) throw new Exception('The bit array length must be at least 8 bits.');
-		if ($m & ($m - 1) == 0) throw new Exception('The bit array length must be power of 2.');
+		if (($m & ($m - 1)) !== 0) throw new Exception('The bit array length must be power of 2.');
 		if ($m > 8589934592) throw new Exception('The maximum data structure size is 1GB.');
 		$this->m = $m; //number of bits
 		$this->k = $k;
@@ -117,7 +117,7 @@ class BloomFilter implements iAMQ{
 		for ($index = 0; $index < $this->k; $index++){
 			$hash_sub = hexdec(unpack('H*',substr($hash,$index*$this->chunk_size,$this->chunk_size))[1]);
 			$word = ($hash_sub & $this->mask) >> 3;
-			$this->bit_array[$word] = chr(ord($this->bit_array[$word]) | 1 << ($hash_sub & 7));
+			$this->bit_array[$word] = $this->bit_array[$word] | chr(1 << ($hash_sub & 7));
 		}
 		$this->n++;
 	}
