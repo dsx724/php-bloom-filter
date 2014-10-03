@@ -6,7 +6,7 @@ php-bloom-filter
 * This is a fast (possibly the fastest?) single threaded bloom filter implementation in pure PHP.
 * There are no dependencies on external modules unlike many other implementations.
 * It uses a binary string to store the bit vector and manipulates based on byte indexes of the string.
-* [Apache 2.0 License](https://raw.github.com/dsx724/console-qrcode/master/LICENSE).
+* [Apache 2.0 License](https://raw.github.com/dsx724/php-bloom-filter/master/LICENSE).
 
 There are 3 implementations with slightly different performance characteristics:
 * a 1GB vector implementation with (8-40 bit addressing) with any hash.
