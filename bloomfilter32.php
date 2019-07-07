@@ -51,12 +51,12 @@ class BloomFilter32 {
 		return new self($m,$k);
 	}
 	public static function getUnion($bf1,$bf2){
-		$bf = new self($bf1->m,$bf1->k,$bf1->hash);
+		$bf = new self($bf1->m,$bf1->k);
 		self::merge($bf1,$bf2,$bf,true);
 		return $bf;
 	}
 	public static function getIntersection($bf1,$bf2){
-		$bf = new self($bf1->m,$bf1->k,$bf1->hash);
+		$bf = new self($bf1->m,$bf1->k);
 		self::merge($bf1,$bf2,$bf,false);
 		return $bf;
 	}
